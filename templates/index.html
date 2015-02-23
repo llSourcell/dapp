@@ -3,13 +3,12 @@
 <body>
   <h1>{{ .Title }}</h1>
   <h3>by {{ .Author }}</h3>
-<form>
+<form action="/submittext" method="post">
 Save a text file to IPFS<br>
-<input type="text" name="firstname">
+<input type="text" name="sometext">
 <br>
-<input type="submit" value="Submit">
+<input type="submit" value="submittext">
 </form>
-
-
+<b>your tweet: {{ .Tweet}}</b>
 </body>
 </html>
