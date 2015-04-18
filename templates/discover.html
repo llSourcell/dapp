@@ -1,0 +1,110 @@
+ <!DOCTYPE html>
+ <html lang="en">
+<head>
+  <title>Kerala</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+  <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+
+
+</head>
+ <body>
+	      <!-- Static navbar -->
+      <nav class="navbar navbar-default" role="navigation">
+        <div class="container-fluid">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">Kerala</a>
+          </div>
+          <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+              <li><a href="http://localhost:8080/">My Profile</a></li>
+              <li class="active"><a href="http://localhost:8080/discover/">Discover</a></li>
+              
+                </ul>
+              </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+            
+            
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div><!--/.container-fluid -->
+      </nav>
+</body>
+
+<div id="right">
+ <form name="tableForm">
+ 	<body onload="insertTable();">
+    <div id="wrapper" align="center"></div>
+ </form>
+</div>
+
+
+
+</html>
+
+
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> 
+  
+  
+<script type="text/javascript">
+
+
+function insertTable()
+{
+    var arr = [
+           {{range .Allpeers}}
+               {{.}},
+           {{end}}
+       ];
+	console.log(arr.length);
+	
+    var num_cols = 1;
+    var width = 100;
+	var alignright = "<td style='text-align: right'>"
+    var theader = "<table id='table1' width = ' "+ width +"% '>";
+    var tbody = "";
+    for(var j = 0; j < num_cols; j++)
+    {
+      theader += "<th text-align='left'><font face='verdana'>All peers" + " </font></th>";
+    }
+	var str1 = "{{ index .Allpeers 1}}";
+    for(var i = 0; i < arr.length; i++)
+    {
+        tbody += "<tr>";
+            tbody += "<td>";
+            tbody += "<a href=http://localhost:8080/profile/" +arr[i]+"><b>" + arr[i] + "</b></a>"; 
+            tbody += "</td>";
+        tbody += "</tr>";
+	}
+    var tfooter = "</table>";
+	var endalignright = "</td>"	
+    document.getElementById('wrapper').innerHTML = alignright + theader + tbody + tfooter + endalignright ;
+	
+
+
+}
+
+
+
+</script>
+
+
+<style>
+table {
+    float: right;
+    width: auto;
+}
+
+</style>
+
+
+

@@ -1,14 +1,157 @@
-<!DOCTYPE html>
-<html>
-<body>
-  <h1>{{ .Title }}</h1>
-  <h3>by {{ .Author }}</h3>
-<form action="/textsubmitted" method="post">
-Save a text file to IPFS<br>
-<input type="text" name="sometext">
+ <!DOCTYPE html>
+ <html lang="en">
+<head>
+  <title>Kerala</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+  <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+
+
+</head>
+ <body>
+	      <!-- Static navbar -->
+      <nav class="navbar navbar-default" role="navigation">
+        <div class="container-fluid">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">Kerala</a>
+          </div>
+          <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+              <li class="active"><a href="#">My Profile</a></li>
+              <li><a href="http://localhost:8080/discover/">Discover</a></li>
+              <li><a href="/">My Balance: {{ .Balance }} Mikros</a></li>
+			  
+              
+                </ul>
+              </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+            
+            
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div><!--/.container-fluid -->
+      </nav>
+	 
+	 
+<center>
+<div id="submitform">
+ <form action="/textsubmitted" method="post">
+ <input type="text" name="sometext">
+ <input type="submit" value="submittext">
+ </form>
+</div>
+</center>
+
 <br>
-<input type="submit" value="submittext">
-</form>
-<b>your tweet: {{ .Tweet}}</b>
-</body>
-</html>
+<div id="posts">
+ <form name="tableForm">
+ 	<body onload="insertTable();">
+    <div id="wrapper" align="center"></div>
+ </form>
+</div>
+ </body>
+ </html>
+
+ 
+ 
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> 
+  
+  
+<script type="text/javascript">
+
+
+function insertTable()
+{
+    var arr = [
+           {{range .Tweet}}
+               {{.}},
+           {{end}}
+       ];
+	console.log(arr.length);
+    var num_cols = 1;
+    var width = 100;
+	var alignright = "<td style='text-align: right'>"
+    var theader = "<table id='table1' width = ' "+ width +"% '>";
+    var tbody = "";
+    for(var j = 0; j < num_cols; j++)
+    {
+      theader += "<th text-align='left'><font face='verdana'>My Posts" + " </font></th>";
+    }
+	var str1 = "{{ index .Tweet 1}}";
+    for(var i = 0; i < arr.length; i++)
+    {
+        tbody += "<tr>";
+            tbody += "<td>";
+            tbody += "<b>" + arr[i] + "</b>"; 
+            tbody += "</td>";
+        tbody += "</tr>";
+	}
+    var tfooter = "</table>";
+	var endalignright = "</td>"	
+    document.getElementById('wrapper').innerHTML = alignright + theader + tbody + tfooter + endalignright;
+
+		
+}
+
+
+</script>
+
+
+<style>
+table {
+
+    width: auto;
+}
+
+table#table1 tr:nth-child(even) {
+    background-color: #eee;
+}
+table#table1 tr:nth-child(odd) {
+    background-color: #fff;
+}
+table#table1 th {
+    color: white;
+    background-color: black;
+}
+
+input[type="text"] {
+  display: block;
+  margin: 0;
+  width: 50%;
+  font-family: sans-serif;
+  font-size: 18px;
+  appearance: none;
+  box-shadow: none;
+  border-radius: none;
+}
+input[type="text"]:focus {
+  outline: none;
+}
+
+.style-5 input[type="text"] {
+  padding: 10px;
+  border: solid 1px #fff;
+  box-shadow: inset 1px 1px 2px 0 #707070;
+  transition: box-shadow 0.3s;
+}
+.style-5 input[type="text"]:focus,
+.style-5 input[type="text"].focus {
+  box-shadow: inset 1px 1px 2px 0 #c9c9c9;
+}
+
+input[type=submit] {padding:5px 15px; background:#ccc; border:0 none;
+    cursor:pointer;
+    -webkit-border-radius: 5px;
+    border-radius: 5px; }
+
+
+</style>

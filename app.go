@@ -1,200 +1,232 @@
-
 package main
 
 import (
     "net/http"
 	"github.com/julienschmidt/httprouter"
     "github.com/jbenet/go-ipfs/core"
-    "github.com/jbenet/go-ipfs/core/coreunix"
-    "github.com/jbenet/go-ipfs/repo/fsrepo"
-    "code.google.com/p/go.net/context"
 	"path"
 	"html/template"
 	"fmt"
 	"log"
-	"io/ioutil"
-	//"strings"
-	//"os"
-	"bytes"
-	merkledag "github.com/jbenet/go-ipfs/merkledag"
-	u "github.com/jbenet/go-ipfs/util"
+	"github.com/go-kerala/kerala"
+	peer "github.com/jbenet/go-ipfs/p2p/peer"
+
+	
 	
 	
 )
 
-//Global IPFS node
-var gnode *core.IpfsNode
-
-func main() {
-	
-	//[1] init IPFS node
-    builder := core.NewNodeBuilder().Online()
-    r := fsrepo.At("~/.go-ipfs")
-    if err := r.Open(); err != nil {
-       panic(err)
-    }
-    builder.SetRepo(r)
-    // Make our 'master' context and defer cancelling it
-    ctx, cancel := context.WithCancel(context.Background())
-    defer cancel()
-
-    node, err := builder.Build(ctx)
-    if err != nil {
-        panic(err)
-    }
-    gnode = node
-    fmt.Printf("I am peer: %s\n", node.Identity)
-	
-	//[2] Define routes 
-    router := httprouter.New()
-    router.GET("/", TextInput)
-    router.POST("/textsubmitted", addTexttoIPFS)
-	
-	//[3] Start server
-    log.Fatal(http.ListenAndServe(":8080", router))
+type IPFSHandler struct {
+	node  *core.IpfsNode
 }
 
 type DemoPage struct {
     Title  string
     Author string
-	Tweet string 
+	Tweet []string 
+	isMine bool
+	Balance float64
 }
 
-//[1] input page
-func TextInput(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+type PeerList struct {
+	Allpeers []string
 	
-	//pull tweet from IPFS and display
- reader, err := coreunix.Cat(gnode, "QmdWDjrgPmnDdu4UZeunmtp5Aa8i6HpxpeCi3Tor4BNaAH")
- buf := new(bytes.Buffer)
- buf.ReadFrom(reader)
- s := buf.String()
- fmt.Printf("here it is %s", s)
- 
-f,err := ioutil.ReadFile("output.html")
-var Key = u.B58KeyDecode(string(f))
-   var tweetArray = ResolveAllInOrder(gnode,Key)
- 
-    demoheader := DemoPage{"HTTP -> IPFS Add demo", "Siraj", tweetArray[0]}
-
-     fp := path.Join("templates", "index.html")
-     tmpl, err := template.ParseFiles(fp)
-     if err != nil {
-         http.Error(w, err.Error(), http.StatusInternalServerError)
-         return
-     }
-
-     if err := tmpl.Execute(w, demoheader); err != nil {
-         http.Error(w, err.Error(), http.StatusInternalServerError)
-     }
-	 
-	 
-	
-	 
-	 
-	 
 }
 
-//[2] text submitted page
-func addTexttoIPFS(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	//[1] Get new tweet
+func main() {
+	
+	node, err := kerala.StartNode()
+	if err != nil {
+		panic(err)
+	}
+	
+
+	//[2] Define routes 
+    router := httprouter.New()
+	//Route 1 Home (profile)
+    router.GET("/", TextInput(node))	
+	//Route 2 Discover page
+	router.GET("/discover", displayUsers(node))
+	//Route 3 Other user profiles
+    router.GET("/profile/:name", TextInput(node))	
+	//Route 4 Add text to IPFS
+    router.POST("/textsubmitted", addTexttoIPFS(node))
+	router.GET("/test", Test())
+	
+    //[3] link resources
+	router.ServeFiles("/resources/*filepath", http.Dir("resources"))
+	http.Handle("/resources/", http.StripPrefix("/resources/", http.FileServer(http.Dir("resources"))))
+	http.Handle("/", router)
+	
+	//[4] Start server
+	fmt.Println("serving at 8080")
+    log.Fatal(http.ListenAndServe(":8080", router))
+	
+	
+	
+	
+	
+}
+
+
+func displayUsers(node *core.IpfsNode) httprouter.Handle {
+    return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		
+		//get peers
+		
+		peers := node.Peerstore.Peers()
+		data := make([]string, len(peers))
+		for i := range data {
+		    data[i] = peer.IDB58Encode(peers[i])
+		}
+		fmt.Println("the peers are %s", data)
+		
+		
+		
+		
+	    demoheader := PeerList{data}
+        fp := path.Join("templates", "discover.html")
+        tmpl, err := template.ParseFiles(fp)
+        if err != nil {
+            http.Error(w, err.Error(), http.StatusInternalServerError)
+            return
+        }
+        if err := tmpl.Execute(w, demoheader); err != nil {
+            http.Error(w, err.Error(), http.StatusInternalServerError)
+        }
+		
+	}
+}
+
+
+func Test() httprouter.Handle {
+
+return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+    fmt.Fprint(w, "Welcome!\n")
+	hash := kerala.Pay("1000","1HihKUXo6UEjJzm4DZ9oQFPu2uVc9YK9Wh", "akSjSW57xhGp86K6JFXXroACfRCw7SPv637", "10", "AHthB6AQHaSS9VffkfMqTKTxVV43Dgst36", "L1jftH241t2rhQSTrru9Vd2QumX4VuGsPhVfSPvibc4TYU4aGdaa" )
+	fmt.Println(hash)
+
+		
+}
+}
+
+
+func TextInput(node *core.IpfsNode) httprouter.Handle {
+    return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {		
+
+		
+		
+		fmt.Println("textinput is even called %s", ps.ByName("name"))
+		var userID = ps.ByName("name")
+		balance := kerala.GetBalance("1HihKUXo6UEjJzm4DZ9oQFPu2uVc9YK9Wh")
+		
+		
+		
+		//if its the homepage, just pull the node ID from output.html
+		if userID == "" {
+			tweetArray, err := kerala.GetStrings(node, "")
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println("the tweet array is %s", tweetArray)
+			if tweetArray == nil {
+				fmt.Println("tweetarray is nil")
+			    demoheader := DemoPage{"Decentralized Twitter", "Siraj", nil, true, balance }
+		        fp := path.Join("templates", "index.html")
+		        tmpl, err := template.ParseFiles(fp)
+		        if err != nil {
+		            http.Error(w, err.Error(), http.StatusInternalServerError)
+		            return
+		        }
+		        if err := tmpl.Execute(w, demoheader); err != nil {
+		            http.Error(w, err.Error(), http.StatusInternalServerError)
+		        }
+			} else {
+				fmt.Println("tweetarray is not nil")
+		
+		    demoheader := DemoPage{"Decentralized Twitter", "Siraj", tweetArray, true, balance}
+		     fp := path.Join("templates", "index.html")
+		     tmpl, err := template.ParseFiles(fp)
+		     if err != nil {
+		         http.Error(w, err.Error(), http.StatusInternalServerError)
+		         return
+		     }
+		     if err := tmpl.Execute(w, demoheader); err != nil {
+		         http.Error(w, err.Error(), http.StatusInternalServerError)
+		     } 
+			}
+		  
+		} else {
+			
+			//else pull it from the URL
+			tweetArray, err := kerala.GetStrings(node, userID)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println("the tweet array is %s", tweetArray)
+			if tweetArray == nil {
+				fmt.Println("tweetarray is nil")
+			    demoheader := DemoPage{"Decentralized Twitter", "Siraj", nil, false,balance}
+		        fp := path.Join("templates", "index.html")
+		        tmpl, err := template.ParseFiles(fp)
+		        if err != nil {
+		            http.Error(w, err.Error(), http.StatusInternalServerError)
+		            return
+		        }
+		        if err := tmpl.Execute(w, demoheader); err != nil {
+		            http.Error(w, err.Error(), http.StatusInternalServerError)
+		        }
+			} else {
+				fmt.Println("tweetarray is not nil")
+		
+		    demoheader := DemoPage{"Decentralized Twitter", "Siraj", tweetArray, false,balance}
+		     fp := path.Join("templates", "index.html")
+		     tmpl, err := template.ParseFiles(fp)
+		     if err != nil {
+		         http.Error(w, err.Error(), http.StatusInternalServerError)
+		         return
+		     }
+		     if err := tmpl.Execute(w, demoheader); err != nil {
+		         http.Error(w, err.Error(), http.StatusInternalServerError)
+		     } 
+			}
+			 
+			
+		}
+	
+
+	 
+	
+}
+	 
+	
+}
+
+func addTexttoIPFS(node *core.IpfsNode) httprouter.Handle {
+    return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
     r.ParseForm()
 	fmt.Println("input text is:", r.Form["sometext"])
 	var userInput = r.Form["sometext"]
-	
-	//[2] Check if key is stored locally
-	f,err := ioutil.ReadFile("output.html")
- 	if err!=nil {
-  			fmt.Print( "err in ioutil.ReadFile" )
-  		}
-	//[3] If key is not stored locally, the user is new
-	if string(f) == "" {
-		fmt.Printf("local storage is empty")
-		//[4] Initialize a MerkleDAG node and key 
-		var NewNode * merkledag.Node
-		var Key u.Key
-		//[5] Fill the node with user input
-		NewNode = MakeStringNode(userInput[0])
-		//[6] Add the node to IPFS
-		Key, _ = gnode.DAG.Add(NewNode)
-		//[7] Add the user input key to local store
-		fmt.Printf("the key is %s", Key)
-		err := ioutil.WriteFile("output.html", []byte(Key.B58String()) , 0777)
-		if err != nil {
-			panic(err)
-		}
-		//[8] Write the hash as a response on the page
-        w.Write([]byte(Key))
-		
-		//else the user has already tweeted
-		}else {
-			//[9] Initialize a new MerkleDAG node and key
-			var NewNode * merkledag.Node
-			var Key u.Key
-			//[10] Fill the node with user input
-			NewNode = MakeStringNode(userInput[0])
-			//[11] Read the hash from the file
-	 		f,err := ioutil.ReadFile("output.html")
-			//[12] Convert it into a key
-			Key = u.B58KeyDecode(string(f))
-			//[13] Get the Old MerkleDAG node and key
-			var OldNode * merkledag.Node
-			var Key2 u.Key
-			OldNode, _ = gnode.DAG.Get(Key)
-			//[14]Add a link to the old node
-	 		NewNode.AddNodeLink("next", OldNode)
-			//[15] Add thew new node to IPFS
-			Key2, _ = gnode.DAG.Add(NewNode)
-			//[16] Add the new node key to local store (overwrite)
-			err2 := ioutil.WriteFile("output.html", []byte(Key2.B58String()) , 0777)
-			if err2 != nil {
-				panic(err)
-			}
-			//[17] Write the hash as a response on the page
-	        w.Write([]byte(Key2))
-		}
-		
-
-}
-
-func MakeStringNode(s string) * merkledag.Node {
-	n := new(merkledag.Node)
-	n.Data = make([]byte, len(s))
-	copy(n.Data, s)
-	return n;
-}
-
-func ResolveAllInOrder(nd * core.IpfsNode, k u.Key) []string {
-	var stringArr []string
-	var node * merkledag.Node
-	node, err := nd.DAG.Get(k)
+    Key, err := kerala.AddString(node, userInput[0])
 	if err != nil {
-		fmt.Println(err)
-		//return
+		panic(err)
 	}
-
-	fmt.Printf("%s ", string(node.Data[:]))
-	for ;; {
-		var err error
-
-		if len(node.Links) == 0 {
-			break;
-		}
-
-		node, err = node.Links[0].GetNode(nd.DAG)
-		if err != nil {
-			fmt.Println(err)
-			//return
-		}
-
-		fmt.Printf("%s ", string(node.Data[:]))
-		stringArr = append(stringArr, string(node.Data[:]))
-	}
-
-	fmt.Printf("\n");
 	
-	return stringArr
-
+	fmt.Println("the key", Key)
+   // w.Write([]byte(Key))
+	
+	
+	
 }
+}
+
+
+
+
+
+
+
+
 
 
 
