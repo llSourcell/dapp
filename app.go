@@ -10,11 +10,6 @@ import (
 	"log"
 	"github.com/go-kerala/kerala"
 	peer "github.com/jbenet/go-ipfs/p2p/peer"
-	
-
-	
-	
-	
 )
 
 
@@ -107,21 +102,18 @@ func TextInput(node *core.IpfsNode) httprouter.Handle {
     return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {		
 
 		var userID = ps.ByName("name")
-		fmt.Println("BITCH",)
-		
-		
+
 		//get your current balance
 		balance := kerala.GetBalance("1HihKUXo6UEjJzm4DZ9oQFPu2uVc9YK9Wh")
 		
 
-		//if its the homepage, just pull the node ID from output.html
 		
 		//[1] If its your home profile page
 		if userID == "" {
-			pointsTo, err := node.Namesys.Resolve(node.Context(), node.Identity.Pretty())
+			pointsTo, err := kerala.GetDAG(node, node.Identity.Pretty())
 			tweetArray, err := kerala.GetStrings(node, pointsTo.B58String())
 			if err != nil {
-				panic(err)
+				fmt.Println("WHOOPS", err)
 			}
 			fmt.Println("the tweet array is %s", tweetArray)
 			//[1A] If no tweets, send nil
@@ -156,7 +148,8 @@ func TextInput(node *core.IpfsNode) httprouter.Handle {
 			
 			//[2] If its another profile
 			//Pull from IPNS
-			pointsTo, err := node.Namesys.Resolve(node.Context(), userID)
+			pointsTo, err := kerala.GetDAG(node, userID)
+			
 			//[2A] If nil, send nil
 			if err != nil {
 				fmt.Println("ERROR")
